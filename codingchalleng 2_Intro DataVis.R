@@ -1,110 +1,192 @@
 ## =========================
-## Coding Challenge 2 Plots
+## Coding Challenge 2_ Intro to Visualization
 ## =========================
 
-library(ggplot2)
-library(dplyr)
+Precious Chukwubem
 
-# ---- Load data ----
-don_raw <- read.csv("MycotoxinData.csv", header = TRUE, stringsAsFactors = FALSE)
+library(tidyverse)
+library(ggpubr)
+install.packages("ggpubr")
+install.packages("ggrepel")
+library(ggrepel)
+install.packages(ggplot)                
+library(ggplot2)                
+library(ggplot)
 
-# ---- Helper: find a column by pattern (case-insensitive) ----
-find_col <- function(df, patterns) {
-  nms <- names(df)
-  hit <- which(sapply(nms, function(nm) any(grepl(paste(patterns, collapse="|"), nm, ignore.case = TRUE))))
-  if (length(hit) == 0) return(NA_character_)
-  nms[hit[1]]
-}
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-# ---- Identify likely column names ----
-don_col <- find_col(don_raw, c("^don$", "deoxynivalenol"))
-trt_col <- find_col(don_raw, c("^treat", "treatment", "trt", "group"))
-cul_col <- find_col(don_raw, c("^cultivar$", "cult", "variety", "wheat"))
+mycotoxin <- read.csv(file.choose(), na.strings = "na")
+head(mycotoxin)
+mycotoxin$Treatment <- as.factor(mycotoxin$Treatment) 
+mycotoxin$Cultivar <- as.factor(mycotoxin$Cultivar)  
+str(mycotoxin)
 
-# If your dataset uses unexpected names, this will tell you what to change
-if (is.na(don_col) || is.na(trt_col) || is.na(cul_col)) {
-  stop(
-    paste0(
-      "Could not automatically find required columns.\n",
-      "Detected:\n",
-      "  DON column: ", don_col, "\n",
-      "  treatment column: ", trt_col, "\n",
-      "  cultivar column: ", cul_col, "\n\n",
-      "Here are your column names:\n",
-      paste(names(don_raw), collapse = ", ")
-    )
-  )
-}
+cbbPalette <- c("#56B4E9", "#009E73")
 
-# ---- Standardize to expected names ----
-don <- don_raw %>%
-  rename(
-    DON = all_of(don_col),
-    treatment = all_of(trt_col),
-    cultivar = all_of(cul_col)
-  ) %>%
-  mutate(
-    DON = as.numeric(DON),
-    treatment = as.factor(treatment),
-    cultivar = as.factor(cultivar)
-  )
+#DON_PLOT1 
 
-# Optional: set treatment order (uncomment if you want a specific order)
-# don$treatment <- factor(don$treatment, levels = c("NTC","Fg","Fg+40","Fg+70","Fg+37"))
+Plot1 <- ggplot(mycotoxin, aes(x = Treatment, y = DON, fill = Cultivar)) + 
+  geom_boxplot(position = position_dodge(0.85)) + # add boxplot layer 
+  xlab("") +  
+  ylab("DON (ppm)") + # y label 
+  geom_point(alpha = 0.6,pch = 21, color = "black", position = position_jitterdodge(0.05)) + 
+  scale_fill_manual(values = cbbPalette)+ # transparency of the jittered points to 0.6. #Jitter points over the boxplot and fill the points and boxplots Cultivar with two colors from the cbbPallete  
+  facet_wrap(~Cultivar)+ #faceted by Cultivar 
+  theme_classic() # for classic theme  
 
-# ---- Common position for points (jitter + dodge) ----
-pd <- position_jitterdodge(jitter.width = 0.15, dodge.width = 0.75)
+Plot1
 
-# =========================
-# 2) BOX PLOT (4 pts)
-# DON (y) vs treatment (x), color mapped to cultivar
-# Add points (Q4), facet by cultivar (Q5)
-# =========================
-p_box <- ggplot(don, aes(x = treatment, y = DON, color = cultivar)) +
-  geom_boxplot(outlier.shape = NA) +  # hide default outliers since we overlay all points
-  geom_point(
-    aes(fill = cultivar),
-    shape = 21,
-    color = "black",
-    position = pd
-  ) +
-  facet_wrap(~cultivar) +
-  labs(y = "DON (ppm)", x = "") +
+Plot1_bar <- ggplot(mycotoxin, aes(x = Treatment, y = DON, fill = Cultivar)) +
+  stat_summary(fun = mean, 
+               geom = "bar", 
+               position = position_dodge(0.9), 
+               width = 0.8) +
+  stat_summary(fun.data = mean_se, 
+               geom = "errorbar", 
+               position = position_dodge(0.9), 
+               width = 0.2) +
+  xlab("") +
+  ylab("DON (ppm)") +
+  scale_fill_manual(values = cbbPalette) +
+  facet_wrap(~Cultivar) +
   theme_classic()
 
-print(p_box)
+Plot1_bar
 
-# =========================
-# 3) BAR CHART with SE via stat_summary (4 pts)
-# mean bars + mean_se error bars, position = dodge
-# Add points (Q4), facet by cultivar (Q5)
-# =========================
-p_bar <- ggplot(don, aes(x = treatment, y = DON, fill = cultivar)) +
-  stat_summary(
-    fun = mean,
-    geom = "bar",
-    position = position_dodge(width = 0.75)
-  ) +
-  stat_summary(
-    fun.data = mean_se,
-    geom = "errorbar",
-    width = 0.2,
-    position = position_dodge(width = 0.75)
-  ) +
-  geom_point(
-    aes(fill = cultivar),
-    shape = 21,
-    color = "black",
-    position = pd
-  ) +
-  facet_wrap(~cultivar) +
-  labs(y = "DON (ppm)", x = "") +
+Plot1 <- ggplot(mycotoxin, aes(x = Treatment, y = DON, fill = Cultivar)) +  # Define aesthetics: x-axis as Treatment, y-axis as DON, and fill by Cultivar
+  stat_summary(fun = mean, geom = "bar", position = position_dodge(0.9)) +  # Add bars representing mean DON values
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.3, 
+               position = position_dodge(0.9)) +  # Add error bars representing the standard error of the mean
+  xlab("") +  # Label the x-axis
+  ylab("DON (ppm)") +  # Label the y-axis
+  scale_fill_manual(values = cbbPalette) +  # Manually set fill colors for Cultivar from the cbbPalette
+  theme_classic() +  # Use a classic theme for the plot
+  facet_wrap(~Cultivar)  # Create separate panels for each Cultivar
+
+Plot1
+
+##Question 2 — Boxplot with distribution points
+
+Plot1 <- ggplot(mycotoxin, aes(x = Treatment, y = DON, fill = Cultivar)) + 
+  geom_boxplot(position = position_dodge(0.85)) +  # add boxplot layer
+  
+  geom_point(shape = 21, color = "black",
+             position = position_jitterdodge(jitter.width = 0.2,
+                                             dodge.width = 0.85)) +  # add jittered points
+  
+  xlab("") +  
+  ylab("DON (ppm)") +  
+  scale_fill_manual(values = cbbPalette) +  
   theme_classic()
 
-print(p_bar)
+Plot1
 
+#Question 3 — Bar chart (mean ± SE) with distribution points
 
+Plot1_bar <- ggplot(mycotoxin, aes(x = Treatment, y = DON, fill = Cultivar)) +
+  
+  stat_summary(fun = mean,
+               geom = "bar",
+               position = position_dodge(0.9),
+               width = 0.8) +
+  
+  stat_summary(fun.data = mean_se,
+               geom = "errorbar",
+               position = position_dodge(0.9),
+               width = 0.2) +
+  
+  geom_point(shape = 21, color = "black",
+             position = position_jitterdodge(jitter.width = 0.2,
+                                             dodge.width = 0.9)) +  # add jittered points
+  
+  xlab("") +
+  ylab("DON (ppm)") +
+  scale_fill_manual(values = cbbPalette) +
+  theme_classic()
 
+Plot1_bar
 
+## — Boxplot with points and facet by Cultivar
 
+Plot1 <- ggplot(mycotoxin, aes(x = Treatment, y = DON, fill = Cultivar)) + 
+  geom_boxplot(position = position_dodge(0.85)) +  
+  geom_point(shape = 21, color = "black",
+             position = position_jitterdodge(jitter.width = 0.2,
+                                             dodge.width = 0.85)) +  
+  xlab("") +  
+  ylab("DON (ppm)") +  
+  scale_fill_manual(values = cbbPalette) +  
+  facet_wrap(~Cultivar) +  # facet by cultivar
+  theme_classic()
 
+Plot1
+
+#Question 3 — Bar chart (mean ± SE) with points and facet by Cultivar
+
+Plot1_bar <- ggplot(mycotoxin, aes(x = Treatment, y = DON, fill = Cultivar)) +
+  
+  stat_summary(fun = mean,
+               geom = "bar",
+               position = position_dodge(0.9),
+               width = 0.8) +
+  
+  stat_summary(fun.data = mean_se,
+               geom = "errorbar",
+               position = position_dodge(0.9),
+               width = 0.2) +
+  
+  geom_point(shape = 21, color = "black",
+             position = position_jitterdodge(jitter.width = 0.2,
+                                             dodge.width = 0.9)) +
+  
+  xlab("") +
+  ylab("DON (ppm)") +
+  scale_fill_manual(values = cbbPalette) +
+  facet_wrap(~Cultivar) +  # facet by cultivar
+  theme_classic()
+
+Plot1_bar
+
+#Boxplot with transparent points and facet
+
+Plot1 <- ggplot(mycotoxin, aes(x = Treatment, y = DON, fill = Cultivar)) + 
+  geom_boxplot(position = position_dodge(0.85)) +  
+  geom_point(shape = 21, 
+             color = "black",
+             alpha = 0.5,   # transparency added
+             position = position_jitterdodge(jitter.width = 0.2,
+                                             dodge.width = 0.85)) +  
+  xlab("") +  
+  ylab("DON (ppm)") +  
+  scale_fill_manual(values = cbbPalette) +  
+  facet_wrap(~Cultivar) +  
+  theme_classic()
+
+Plot1
+
+## Bar chart (mean ± SE) with transparent points and facet
+Plot1_bar <- ggplot(mycotoxin, aes(x = Treatment, y = DON, fill = Cultivar)) +
+  
+  stat_summary(fun = mean,
+               geom = "bar",
+               position = position_dodge(0.9),
+               width = 0.8) +
+  
+  stat_summary(fun.data = mean_se,
+               geom = "errorbar",
+               position = position_dodge(0.9),
+               width = 0.2) +
+  
+  geom_point(shape = 21, 
+             color = "black",
+             alpha = 0.5,   # transparency added
+             position = position_jitterdodge(jitter.width = 0.2,
+                                             dodge.width = 0.9)) +
+  
+  xlab("") +
+  ylab("DON (ppm)") +
+  scale_fill_manual(values = cbbPalette) +
+  facet_wrap(~Cultivar) +
+  theme_classic()
+
+Plot1_bar
