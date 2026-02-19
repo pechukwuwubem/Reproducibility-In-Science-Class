@@ -1,6 +1,6 @@
-Precious Chukwubem
+## Precious Chukwubem
 
-Coding Challenge 3: Data Visualization 2
+## Coding Challenge 3: Data Visualization 2
 
 setwd("/Users/preciouschukwubem/Library/CloudStorage/OneDrive-AuburnUniversity/Reproducibility In Science")
 
