@@ -1,0 +1,158 @@
+---
+title: "R_Markdown_Coding_Challenge"
+author: "Precious Chukwubem"
+date: "2026-02-19"
+output: 
+   word_document: default 
+   html_document:
+     toc: True
+   md_document: 
+     variant: gfm
+   pdf_document:
+     toc: True
+     number_sections: True
+---
+
+
+# Question
+
+*In the context of R Markdown , the YAML header appears at the top of the document, enclosed by --- lines, and it contains metadata about the document.*
+*Literate Programming(For eg. R Markdown) is  documentation and code live together in the same file, making it easy for others (and your future self!) to understand not just what the code does, but why it was written that way.*
+
+
+# Question2a
+-[PaperLink](https://apsjournals.apsnet.org/doi/10.1094/PDIS-06-21-1253-RE)
+
+
+# Question2b
+```{r load data}
+library(tidyverse)
+library(ggplot2)
+library(ggpubr) 
+mycotoxin <- read.csv("MycotoxinData.csv")
+mycotoxin$Treatment <- as.factor(mycotoxin$Treatment) 
+mycotoxin$Cultivar <- as.factor(mycotoxin$Cultivar)
+mycotoxin$DON <- as.numeric(mycotoxin$DON)
+mycotoxin$X15ADON <- as.numeric(mycotoxin$X15ADON)
+mycotoxin$MassperSeed_mg <- as.numeric(mycotoxin$MassperSeed_mg)
+str(mycotoxin)
+
+```
+
+
+
+# Question2c
+```{r}
+cbbPalette <- c("#56B4E9", "#009E73")
+```
+
+
+
+# DON_PLOT1 
+```{r}
+Plot1 <- ggplot(mycotoxin, aes(x = Treatment, y = DON, fill = Cultivar)) + 
+  geom_boxplot(position = position_dodge(0.85)) + 
+  xlab("") +  
+  ylab("DON (ppm)") + 
+  geom_point(alpha = 0.6,pch = 21, color = "black") + 
+  scale_fill_manual(values = cbbPalette)+ 
+  facet_wrap(~Cultivar)+  
+  theme_classic() 
+Plot1
+```
+
+
+
+# Plot X15ADON
+```{r}
+Plot2 <- ggplot(mycotoxin, aes(x = Treatment, y = X15ADON, fill = Cultivar)) + 
+  geom_boxplot(position = position_dodge(0.85)) +  
+  xlab("") +  
+  ylab("15ADON") +  
+  geom_point(alpha = 0.6,pch = 21, color = "black") + 
+  scale_fill_manual(values = cbbPalette)+ 
+  facet_wrap(~Cultivar)+ 
+  theme_classic() 
+Plot2
+```
+
+
+# SeedMass
+```{r}
+#Plot 3
+
+Plot3<- ggplot(mycotoxin, aes(x = Treatment, y = MassperSeed_mg, fill = Cultivar)) + 
+geom_boxplot(position = position_dodge(0.85)) +  
+  xlab("") +  
+  ylab("Seed Mass (mg)") +  
+  geom_point(alpha = 0.6,pch = 21, color = "black") + 
+  scale_fill_manual(values = cbbPalette)+ 
+  facet_wrap(~Cultivar)+ 
+  theme_classic() 
+Plot3
+```
+
+
+
+#3Combined_PLOT
+
+```{r}
+
+library(ggpubr)
+
+
+figure=ggarrange(
+  Plot1,
+  Plot2,
+  Plot3,
+  labels = c("A", "B", "C"),
+  nrow = 1,
+  ncol = 3,
+  common.legend=TRUE
+)
+
+figure
+```
+
+
+
+#Combined_with_pairwisecomparison
+```{r}
+## Plot 1: plot1 with pairwise comparisons 
+Plot1_pwc <- Plot1 +
+  geom_pwc(aes(group = Treatment), method = "t.test", label = "p.adj.format") +  # Add pairwise t-tests
+  theme_classic()
+
+Plot1_pwc
+
+
+##Plot 2: plot2 with pairwise comparisons
+Plot2_pwc <- Plot2 +
+  geom_pwc(aes(group=Treatment), method= "t.test", label= "p.adj.format")+
+  theme_classic()
+
+Plot2_pwc
+
+##Plot 3: plot3 with pairwise comparisons
+Plot3_pwc = Plot3 + geom_pwc(aes(group=Treatment), method="t.test", label="p.adj.format")+
+  theme_classic()
+
+Plot3_pwc
+
+#Combine all three plots with a common legend ----
+Combined_pwc =ggarrange(
+  Plot1_pwc,
+  Plot2_pwc,
+  Plot3_pwc,
+  labels = c("D", "E", "F"),
+  nrow = 1,
+  ncol = 3,
+  common.legend=TRUE
+)
+
+Combined_pwc
+
+```
+
+
+
